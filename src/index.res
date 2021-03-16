@@ -72,7 +72,6 @@ let removeDialogBox = (event) => {
 }
 
 let removePostById = (event, timerId) => {
-  Js.log(`remove:${Belt.Int.toString(timerId)}`)
   if timerId != -1 {
     clearTimeout(timerId)
   }
@@ -83,7 +82,6 @@ let removePostById = (event, timerId) => {
 }
 
 let restore = (event, timerId) => {
-  Js.log(`restore:${Belt.Int.toString(timerId)}`)
   if timerId != -1 {
     clearTimeout(timerId)
   }
@@ -130,14 +128,23 @@ let startRemovalTimer = (event) => {
     let _ = restoreButton["setAttribute"]("id", `block-restore-${Belt.Int.toString(postId)}`)
     let _ = restoreButton["setAttribute"]("class", "button button-warning mr-1")
     restoreButton["innerText"] = "Restore"
-    let _ = restoreButton["addEventListener"]("click", restore, timerId)
+
+    let evtHandlerRestore = (event) => {
+      restore(event, timerId)
+    }
+
+    let _ = restoreButton["addEventListener"]("click", evtHandlerRestore)
     let _ = flexDiv["appendChild"](restoreButton)
 
     let deleteNow = document["createElement"]("button")
     let _ = deleteNow["setAttribute"]("id", `block-delete-immediate-${Belt.Int.toString(postId)}`)
     let _ = deleteNow["setAttribute"]("class", "button button-danger")
     deleteNow["innerText"] = "Delete Immediately"
-    let _ = deleteNow["addEventListener"]("click", removePostById, timerId)
+
+    let evtHandlerRemoval = (event) => {
+      removePostById(event, timerId)
+    }
+    let _ = deleteNow["addEventListener"]("click", evtHandlerRemoval, timerId)
     let _ = flexDiv["appendChild"](deleteNow)
 
     let progressBar = document["createElement"]("div")

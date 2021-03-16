@@ -84,7 +84,6 @@ function removeDialogBox($$event) {
 }
 
 function removePostById($$event, timerId) {
-  console.log("remove:" + String(timerId));
   if (timerId !== -1) {
     clearTimeout(timerId);
   }
@@ -96,7 +95,6 @@ function removePostById($$event, timerId) {
 }
 
 function restore($$event, timerId) {
-  console.log("restore:" + String(timerId));
   if (timerId !== -1) {
     clearTimeout(timerId);
   }
@@ -140,13 +138,19 @@ function startRemovalTimer($$event) {
   restoreButton.setAttribute("id", "block-restore-" + String(postId));
   restoreButton.setAttribute("class", "button button-warning mr-1");
   restoreButton.innerText = "Restore";
-  restoreButton.addEventListener("click", restore, timerId);
+  var evtHandlerRestore = function ($$event) {
+    return restore($$event, timerId);
+  };
+  restoreButton.addEventListener("click", evtHandlerRestore);
   flexDiv.appendChild(restoreButton);
   var deleteNow = document.createElement("button");
   deleteNow.setAttribute("id", "block-delete-immediate-" + String(postId));
   deleteNow.setAttribute("class", "button button-danger");
   deleteNow.innerText = "Delete Immediately";
-  deleteNow.addEventListener("click", removePostById, timerId);
+  var evtHandlerRemoval = function ($$event) {
+    return removePostById($$event, timerId);
+  };
+  deleteNow.addEventListener("click", evtHandlerRemoval, timerId);
   flexDiv.appendChild(deleteNow);
   var progressBar = document.createElement("div");
   progressBar.setAttribute("class", "post-deleted-progress");
