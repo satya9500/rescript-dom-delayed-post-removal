@@ -1,5 +1,8 @@
 @val external document: {..} = "document"
 @val external window: {..} = "window"
+@val external event: {..} = "event"
+@bs.val external setTimeout: (unit => unit, int) => int = "setTimeout"
+@bs.val external clearTimeout: int => unit = "clearTimeout"
 
 module Post = {
   type t = {
@@ -48,6 +51,104 @@ let posts = [
   ),
 ]
 
+let returnInt = (x) => {
+  switch (x) {
+  | Some (y) => y
+  | None => -1
+  }
+}
+
+let getIdFromEvent = (event) => {
+  let postStringId = event["target"]["id"]
+  let stringSize = Js.String.length(postStringId)
+  let lastChar = Js.String.charAt(stringSize-1, postStringId)
+  returnInt(Belt.Int.fromString(lastChar))
+}
+
+let removeDialogBox = (event) => {
+  let postId = getIdFromEvent(event)
+  let reservePost = document["getElementById"](`block-delete-dialog-${Belt.Int.toString(postId)}`)
+  let _ = reservePost["remove"]()
+}
+
+let removePostById = (event, timerId) => {
+  Js.log(`remove:${Belt.Int.toString(timerId)}`)
+  if timerId != -1 {
+    clearTimeout(timerId)
+  }
+  let postId = getIdFromEvent(event)
+  let reservePost = document["getElementById"](`block-${Belt.Int.toString(postId)}`)
+  let _ = reservePost["remove"]()
+  let _ = removeDialogBox(event)
+}
+
+let restore = (event, timerId) => {
+  Js.log(`restore:${Belt.Int.toString(timerId)}`)
+  if timerId != -1 {
+    clearTimeout(timerId)
+  }
+  let _ = removeDialogBox(event)
+  let postId = getIdFromEvent(event)
+  let reservePost = document["getElementById"](`block-${Belt.Int.toString(postId)}`)
+  reservePost["style"]["display"] = "block"
+}
+
+let hide = (event) => {
+  let postId = getIdFromEvent(event)
+  let reservePost = document["getElementById"](`block-${Belt.Int.toString(postId)}`)
+  reservePost["style"]["display"] = "none"
+}
+
+let startRemovalTimer = (event) => {
+  let timerId = setTimeout(() => removePostById(event, -1), 10000)
+  let postId = getIdFromEvent(event)
+  hide(event)
+
+  let body = document["body"]
+
+  let removePost = document["createElement"]("div")
+  let _ = removePost["setAttribute"]("class", "post-deleted pt-1")
+  let _ = removePost["setAttribute"]("id", `block-delete-dialog-${Belt.Int.toString(postId)}`)
+
+    let para = document["createElement"]("p")
+    let _ = para["setAttribute"]("class", "text-center")
+    para["innerText"] = "This post from "
+
+      let em = document["createElement"]("em")
+      em["innerText"] = `${posts[postId].title} from ${posts[postId].author}`
+      let _ = removePost["appendChild"](para)
+      let _ = para["appendChild"](em)
+
+    let text = document["createTextNode"](" will be permanently removed in 10 seconds.");
+    let _ = para["appendChild"](text)
+
+    let flexDiv = document["createElement"]("div")
+    let _ = flexDiv["setAttribute"]("class", "flex-center")
+    let _ = removePost["appendChild"](flexDiv)
+
+    let restoreButton = document["createElement"]("button")
+    let _ = restoreButton["setAttribute"]("id", `block-restore-${Belt.Int.toString(postId)}`)
+    let _ = restoreButton["setAttribute"]("class", "button button-warning mr-1")
+    restoreButton["innerText"] = "Restore"
+    let _ = restoreButton["addEventListener"]("click", restore, timerId)
+    let _ = flexDiv["appendChild"](restoreButton)
+
+    let deleteNow = document["createElement"]("button")
+    let _ = deleteNow["setAttribute"]("id", `block-delete-immediate-${Belt.Int.toString(postId)}`)
+    let _ = deleteNow["setAttribute"]("class", "button button-danger")
+    deleteNow["innerText"] = "Delete Immediately"
+    let _ = deleteNow["addEventListener"]("click", removePostById, timerId)
+    let _ = flexDiv["appendChild"](deleteNow)
+
+    let progressBar = document["createElement"]("div")
+    let _ = progressBar["setAttribute"]("class", "post-deleted-progress")
+    let _ = removePost["appendChild"](progressBar)
+
+  let afterBlockId = postId+1;
+  let afterBlockNode = document["getElementById"](`block-${Belt.Int.toString(afterBlockId)}`)
+  let _ = body["insertBefore"](removePost, afterBlockNode)
+}
+
 let appendPosts: unit => unit = () => {
   let body = document["body"]
   let numOfPosts = Js.Array.length(posts)
@@ -78,10 +179,10 @@ let appendPosts: unit => unit = () => {
     let _ = removeBtn["setAttribute"]("id", `block-delete-${Belt.Int.toString(i)}`)
     let _ = removeBtn["setAttribute"]("class", "button button-danger")
     removeBtn["innerText"] = "Remove this post"
+    let _ = removeBtn["addEventListener"]("click", startRemovalTimer)
     let _ = postDiv["appendChild"](removeBtn)
 
     let _ = body["appendChild"](postDiv)
-
   }
 }
 
